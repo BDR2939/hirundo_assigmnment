@@ -10,7 +10,10 @@ from tqdm import tqdm
 from pathlib import Path
 from typing import Callable, Optional, List
 import torch.nn.functional as F
+from kneed import KneeLocator
+from sklearn.mixture import GaussianMixture
 
+colors = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c', '#9467bd']
 
 
 class SelfInfluence:
@@ -223,40 +226,6 @@ class TracInPipeline:
             metrics["auc"] = np.trapz(recovery, fractions)
         return metrics
 
-    # def _generate_plots(self, df, metrics):
-    #     figs = {}
-
-    #     # Histogram of self-influence scores
-    #     figs["influence_histogram"] = px.histogram(
-    #         df, x="influence", nbins=60,
-    #         color="mislabeled" if "mislabeled" in df.columns else None,
-    #         title="Distribution of Self-Influence Scores"
-    #     )
-
-    #     # Recovery curve
-    #     if metrics:
-    #         figs["recovery_curve"] = go.Figure()
-    #         figs["recovery_curve"].add_trace(go.Scatter(
-    #             x=metrics["fractions"],
-    #             y=metrics["recovery"],
-    #             mode="lines+markers",
-    #             name="Recovery"
-    #         ))
-    #         figs["recovery_curve"].update_layout(
-    #             title="Mislabeled Recovery Curve",
-    #             xaxis_title="Fraction of dataset examined",
-    #             yaxis_title="Fraction of mislabeled recovered"
-    #         )
-
-    #     # Scatter: influence vs label (optional)
-    #     if "label" in df.columns:
-    #         figs["influence_by_label"] = px.box(
-    #             df, x="label", y="influence",
-    #             title="Influence Distribution by Class Label"
-    #         )
-
-    #     return figs
-
 
     def _generate_plots(self, df, metrics):
         figs = {}
@@ -265,6 +234,7 @@ class TracInPipeline:
         figs["influence_histogram"] = px.histogram(
             df, x="influence", nbins=60,
             color="mislabeled" if "mislabeled" in df.columns else None,
+            color_discrete_sequence=colors[:2] if "mislabeled" in df.columns else [colors[0]],
         )
         figs["influence_histogram"].update_layout(
                 title="Distribution of Self-Influence Scores",
@@ -281,7 +251,7 @@ class TracInPipeline:
                 y=metrics["recovery"],
                 mode="lines+markers",
                 name="Recovery",
-                line=dict(color="#1f77b4", width=3)
+                line=dict(color=colors[0], width=3)
             ))
             figs["recovery_curve"].update_layout(
                 title="Mislabeled Recovery Curve",
@@ -307,7 +277,7 @@ class TracInPipeline:
                 textposition="top center",
                 name="Precision vs Recall",
                 hovertemplate="Top %{text}<br>Precision=%{y:.3f}<br>Recall=%{x:.3f}<extra></extra>",
-                line=dict(width=3, color="#2ca02c"),
+                line=dict(width=3, color=colors[3]),
                 # marker=dict(size=8)
             ))
             figs["precision_vs_recall"].update_layout(
@@ -321,8 +291,10 @@ class TracInPipeline:
 
         # --- Influence by Label (optional, if available) ---
         if "label" in df.columns:
+            num_labels = df["label"].nunique()
             figs["influence_by_label"] = px.box(
-                df, x="label", y="influence",
+                df, x="label", y="influence", color="label",
+                color_discrete_sequence=colors[:num_labels] if num_labels <= len(colors) else colors,
             )
 
             figs["influence_by_label"].update_layout(
@@ -332,6 +304,7 @@ class TracInPipeline:
                 template="plotly_white",
                 width=900,
                 height=500,
+                showlegend=False
             )
 
         return figs
