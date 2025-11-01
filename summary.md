@@ -77,22 +77,22 @@ The modular design of TracInCP supports these extensions with minimal modificati
 
 The following histogram shows the distribution of self-influence values across the noisy CIFAR-100 dataset, revealing the presence of high-influence samples:
 
-![Self-Influence Distribution](self_influence_distribution.png)
+![Self-Influence Distribution](plots/self_influence_distribution.png)
 
 ### Recovery Curve
 
 The recovery curve shows the rate at which TracInCP recovers mislabeled examples as a function of the fraction of the dataset inspected.
 
-![Recovery Curve](recovery%20curve.png)
+![Recovery Curve](plots/recovery%20curve.png)
 
 ### Precision–Recall Analysis
 
 This precision-recall curve shows the trade-off between precision and recall when selecting the top-k% most influential examples:
 
-![Precision-Recall Top-K](precision_recall_top_k.png)
+![Precision-Recall Top-K](plots/precision_recall_top_k.png)
 
 ### Dataset Cleaning Methods Comparison
 
 Comparison of different subset selection methods (percentile, knee, GMM) for identifying clean data subsets:
 
-![Clean Subset Methods Comparison](clean_subset_methods_comparison.png)
+![Clean Subset Methods Comparison](plots/clean_subset_methods_comparison.png)
