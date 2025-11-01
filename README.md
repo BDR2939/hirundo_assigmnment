@@ -45,7 +45,7 @@ pipeline = TracInPipeline(
 )
 
 # Run analysis
-dataset = load_dataset("hirundo-io/Noisy-CIFAR-100", split='train')
+dataset = load_dataset("your-dataset", split='train')
 total_influence, results, metrics = pipeline.run(dataset, plot_results=True)
 ```
 
@@ -96,45 +96,6 @@ influence_matrix = pipeline.run(
     test_dataset=test_dataset,      # Required for cross mode
     save_path="results/"
 )
-```
-
-### Command-Line Usage
-
-```python
-# run_pipeline.py
-import argparse
-from tracin_pipeline import TracInPipeline
-from ResNet import ResNet
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoints', nargs='+', required=True)
-    parser.add_argument('--dataset', required=True)
-    parser.add_argument('--mode', choices=['self', 'cross'], default='self')
-    parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--save_path', type=str, default=None)
-    parser.add_argument('--no_plot', action='store_true')
-    
-    args = parser.parse_args()
-    
-    model = ResNet(num_classes=100, n=9).to("cuda")
-    pipeline = TracInPipeline(
-        model=model,
-        checkpoints=args.checkpoints,
-        mode=args.mode,
-        batch_size=args.batch_size
-    )
-    
-    dataset = load_dataset(args.dataset, split='train')
-    pipeline.run(dataset, plot_results=not args.no_plot, save_path=args.save_path)
-
-if __name__ == '__main__':
-    main()
-```
-
-Usage:
-```bash
-python run_pipeline.py --checkpoints checkpoints/*.pth --dataset hirundo-io/Noisy-CIFAR-100 --mode self --save_path results/
 ```
 
 ### Custom Preprocessing
@@ -282,10 +243,16 @@ When `mislabeled` exists:
 
 The pipeline adapts to different use cases:
 
-- **Mislabeling Detection**: Provide `mislabeled` column → use metrics and recovery curves
-- **Influential Example Analysis**: Rank by `influence` or `rank` columns
-- **Class-Specific Analysis**: Provide `label` column → review per-class distributions
-- **Custom Workflows**: Access raw `total_influence` tensor or extend `TracInPipeline`
+- **Mode Selection (`mode`)**:
+  - The pipeline supports both **self-influence** (`mode="self"`)—quantifying how much each training example influences itself (ideal for mislabeling detection)—and **cross-influence** (`mode="cross"`)—measuring how training examples influence validation/test points (useful for debugging and model interpretation). Choose the mode that suits your use case: `self` to surface anomalies within your training data, `cross` to audit your model’s behavior on specific evaluation samples.
+
+- **Preprocessing (`preprocessor`)**:
+  - You may pass a custom preprocessor to automatically enrich samples with metadata or additional features. This enables transformations such as normalization, label remapping, or adding extra columns (e.g., tagging suspected mislabels) before influence computation, and works seamlessly for both HuggingFace and PyTorch datasets.
+
+- **Custom Collation (`collate_fn`)**:
+  - The pipeline accepts an optional `collate_fn` argument, facilitating domain-specific batching strategies (e.g., custom image augmentation, padding strategies, or multi-modal input assembly). This is crucial for handling non-standard datasets or when samples require special preparation before entering the model.
+
+These options allow TracInPipeline to flexibly interoperate with a wide range of datasets and research goals, from clean mislabeling detection to class-specific analysis and beyond. For highly specialized use, you may access raw influence scores directly, or further extend the pipeline.
 
 See `example.ipynb` for complete examples including:
 - Custom preprocessing with metadata
